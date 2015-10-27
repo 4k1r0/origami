@@ -36,7 +36,12 @@ class Origami_generator extends CI_Controller {
      * Point d'entré
      */
     public function index() {
-        $this->run();
+		try {
+			$this->run();
+		}
+		catch(\Exception $e){
+			echo $e->getMessage();
+		}
     }
     
     /**
@@ -447,6 +452,10 @@ class Origami_generator extends CI_Controller {
     public function run() {
         $config = $this->_config();
 
+		if( !is_writable(APPPATH.'models') ){
+			throw new \Exception("Write permissions required in your model directory");
+		}
+		
         foreach ($config as $namespace => $db) {
             echo "<h1>Base de donnée <strong>$namespace</strong></h1><br />";
                         
