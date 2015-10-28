@@ -71,7 +71,7 @@ class Entity
      * @var \Origami\Entity\Manager\Validator
      */
     protected $_validator;
-	
+		
 	/**
 	 * Factory
 	 * @param string $name
@@ -247,11 +247,11 @@ class Entity
         if ($this->_config instanceof \Origami\Entity\Manager\Config) {
             return;
         }
-
+		
         // Options
         $options = array_merge(array(
             'new' => TRUE,
-            'silence' => FALSE
+            'silence' => FALSE,
         ), $options);
 
         // Gestinnaire de configuation
@@ -421,14 +421,14 @@ class Entity
             'replace' => FALSE,
             'force_insert' => FALSE
         ), $options);
-        
+		
         // Clé primaire
-        $field = $this->_storage->get($this->_config->getPrimaryKey());
-        $field_value = $field->getValue();
-
+        $primary_field = $this->_storage->get($this->_config->getPrimaryKey());
+        $primary_field_value = $primary_field->getValue();
+		
         // Si la la requête doit être de type INSERT
-        $has_insert = (empty($field_value) || $options['force_insert'] === TRUE);
-        
+        $has_insert = (empty($primary_field_value) || $options['force_insert'] === TRUE || $this->_storage->isNew());
+        		
         // Si il y a pas de changement
         if ($this->_storage->dirty() === FALSE) {
             return FALSE;
@@ -448,7 +448,7 @@ class Entity
             // Si l'insertion est correcte
             if ($query === TRUE) {
                 // Met a jour la clé primaire en silence
-                $this->_storage->set($field->getName(), $this->db()->insert_id(), TRUE);
+                $this->_storage->set($primary_field->getName(), $this->db()->insert_id(), TRUE);
             }
 
             // Si la requete est de type insert
@@ -456,13 +456,12 @@ class Entity
             // Exécute la requête
             $query = $this
                 ->write()
-                ->from($this->_config->getTable())
-                ->insert();
-
+                ->insert($this->_config->getTable());
+			
             // Si l'insertion est correcte
             if ($query === TRUE) {
                 // Met a jour la clé primaire en silence
-                $this->_storage->set($field->getName(), $this->db()->insert_id(), TRUE);
+                $this->_storage->set($primary_field->getName(), $this->db()->insert_id(), TRUE);
             }
 
             // Si la requete est de type update
@@ -471,7 +470,7 @@ class Entity
             $query = $this
                 ->write()
                 ->from($this->_config->getTable())
-                ->where($field->getName(), $field->getValue())
+                ->where($primary_field->getName(), $primary_field->getValue())
                 ->update();
         }
         
