@@ -16,6 +16,26 @@ class Origami_generator extends CI_Controller {
 
     const STARTCODE2KEEP = "//--START_PERSISTANT_CODE";
     const ENDCODE2KEEP = "//--END_PERSISTANT_CODE";
+	
+	
+	private static $PHP_KEYWORDS = array('__halt_compiler', 'abstract', 'and', 'array', 'as', 
+								'break', 'callable', 'case', 'catch', 'class', 
+								'clone', 'const', 'continue', 'declare', 'default', 
+								'die', 'do', 'echo', 'else', 'elseif', 'empty', 
+								'enddeclare', 'endfor', 'endforeach', 'endif', 
+								'endswitch', 'endwhile', 'eval', 'exit', 'extends', 
+								'final', 'for', 'foreach', 'function', 'global', 
+								'goto', 'if', 'implements', 'include', 'include_once', 
+								'instanceof', 'insteadof', 'interface', 'isset', 
+								'list', 'namespace', 'new', 'or', 'print', 'private', 
+								'protected', 'public', 'require', 'require_once', 
+								'return', 'static', 'switch', 'throw', 'trait', 
+								'try', 'unset', 'use', 'var', 'while', 'xor');
+	
+	private static $PHP_PREDEFINEDCONSTANTS = array('__CLASS__', '__DIR__', '__FILE__', 
+								'__FUNCTION__', '__LINE__', '__METHOD__', 
+								'__NAMESPACE__', '__TRAIT__');
+		
     
     /**
      * Contructeur
@@ -179,7 +199,7 @@ class Origami_generator extends CI_Controller {
     /**
      * Création des modèles d'une base de donée
      */
-    private function _create_entity($namespace) {
+    private function _create_entity($namespace, $tablePrefix = '' ) {
         $relations_comments = array();
 
         echo '<h1>GENERATION</h1>';
@@ -417,7 +437,7 @@ class Origami_generator extends CI_Controller {
                 $this->_append($relations_buffer);
             }
                         
-            $file_name = $table['Name'].'.php';
+            $file_name = $class_name.'.php';
 
             // Si il exite un override
             if (!empty($this->override[$file_name])) {
@@ -457,25 +477,37 @@ class Origami_generator extends CI_Controller {
 		}
 		
         foreach ($config as $namespace => $db) {
-            echo "<h1>Base de donnée <strong>$namespace</strong></h1><br />";
-                        
-            // Création du répertoire
-            $this->_dir(APPPATH.'models/Entity/'.$namespace);
+			try {
+				echo "<h1>Base de donnée <strong>$namespace</strong></h1><br />";
 
-            // Récupère les données des anciens modèles
-            $this->_save_override(APPPATH.'models/Entity/'.$namespace.'/*');
-            
-            // Stock la nouvelle connexion à la base de donnée
-            $this->{"db_$namespace"} = $this->load->database($namespace, TRUE);
+				if (in_array($namespace, self::$PHP_KEYWORDS) || in_array($namespace, self::$PHP_PREDEFINEDCONSTANTS)) {
+					throw new Exception('The database configuration name "'.$namespace.'"
+										is a PHP reserved keyword, please remane it 
+										in your config/database.php 
+										to create entities for this database');
+				}
 
-            // Stock les association many
-            $this->_association_many($namespace);
+				// Création du répertoire
+				$this->_dir(APPPATH.'models/Entity/'.$namespace);
 
-            // Création des modèles
-            $this->_create_entity($namespace);
+				// Récupère les données des anciens modèles
+				$this->_save_override(APPPATH.'models/Entity/'.$namespace.'/*');
 
-            // Profiler
-            $this->output->enable_profiler(TRUE);
+				// Stock la nouvelle connexion à la base de donnée
+				$this->{"db_$namespace"} = $this->load->database($namespace, TRUE);
+
+				// Stock les association many
+				$this->_association_many($namespace);
+
+				// Création des modèles
+				$this->_create_entity($namespace, $db['dbprefix']);
+
+				// Profiler
+				$this->output->enable_profiler(TRUE);
+			}
+			catch(\Exception $e){
+				echo $e->getMessage();
+			}
         }
     }
     
