@@ -216,11 +216,9 @@ class Origami_generator extends CI_Controller {
             $this->_append("\r\n");
             
 			// Manage database prefixs
-            $table['Name'] = (!empty($tablePrefix) && strpos($table['Name'], $tablePrefix) === 0 && substr($table['Name'], 0, strlen($tablePrefix)) === $tablePrefix)
+            $class_name = (!empty($tablePrefix) && strpos($table['Name'], $tablePrefix) === 0 && substr($table['Name'], 0, strlen($tablePrefix)) === $tablePrefix)
 					? substr($table['Name'], strlen($tablePrefix)) 
 					: $table['Name'];
-			
-			$class_name = $table['Name'];
             
             $this->_append("class $class_name extends \Origami\Entity\r\n");
             $this->_append("{\r\n");
